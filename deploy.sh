@@ -76,14 +76,14 @@ if $EXISTS; then
   aws lambda wait function-updated-v2 --function-name "$FUNCTION_NAME"
   echo "==> Updating configuration"
   aws lambda update-function-configuration --function-name "$FUNCTION_NAME" \
-    --timeout 300 --memory-size 1024 --environment file:///tmp/dtp-env.json >/dev/null
+    --timeout 900 --memory-size 1024 --environment file:///tmp/dtp-env.json >/dev/null
   aws lambda wait function-updated-v2 --function-name "$FUNCTION_NAME"
 else
   echo "==> Creating function"
   aws lambda create-function --function-name "$FUNCTION_NAME" \
     --runtime python3.13 --architectures x86_64 \
     --handler app.handler.lambda_handler --role "$ROLE_ARN" \
-    --zip-file fileb://function.zip --timeout 300 --memory-size 1024 \
+    --zip-file fileb://function.zip --timeout 900 --memory-size 1024 \
     --environment file:///tmp/dtp-env.json >/dev/null
   aws lambda wait function-active-v2 --function-name "$FUNCTION_NAME"
 fi
