@@ -66,6 +66,7 @@ The script asks for your OpenAI key at a hidden prompt and never saves it.
 | `ACCESS_CODE` | Required header `x-access-code` for `/api/chat`. The chat page asks for it once. |
 | `OPENAI_API_KEY` | Your OpenAI key. `deploy.sh` asks for it at a hidden prompt (`OPENAI_KEY_PARAM`, an SSM SecureString name, is also supported). |
 | `OPENAI_MODEL` | Default `gpt-5-mini` |
+| `OPENAI_REASONING_EFFORT` | Default `low` (gpt-5/o models only). Keeps a multi-call deep agent fast. |
 
 ## Notes
 
