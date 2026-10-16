@@ -51,6 +51,14 @@ def test_get_today_is_not_a_tool_anymore():
     assert [t.name for t in TOOLS] == ["schedule_plan"]
 
 
+def test_reviewer_has_no_tools(monkeypatch):
+    import app.agent as agent_mod
+    captured = {}
+    monkeypatch.setattr(agent_mod, "create_deep_agent", lambda **kw: captured.update(kw))
+    agent_mod.build_agent(model=ScriptedModel(messages=iter([])))
+    assert captured["subagents"][0]["tools"] == []
+
+
 def test_today_is_injected_and_missing_schedule_is_explained():
     seen = []
 
