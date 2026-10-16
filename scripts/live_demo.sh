@@ -21,7 +21,12 @@ fi
 export PATH="$HOME/.local/bin:$PATH"
 if ! command -v uv >/dev/null 2>&1; then
   echo "==> Installing uv (fast Python package manager)"
-  python3 -m pip install --user --quiet uv
+  # Inside a virtualenv (AWS CloudShell's python3 is one) --user is not allowed,
+  # so try a plain install first, then --user, then uv's standalone installer.
+  python3 -m pip install --quiet uv 2>/dev/null \
+    || python3 -m pip install --user --quiet uv 2>/dev/null \
+    || curl -LsSf https://astral.sh/uv/install.sh | sh
+  hash -r
 fi
 
 VENV=/tmp/deep-task-planner-venv          # /tmp: keeps CloudShell's 1 GB home free
