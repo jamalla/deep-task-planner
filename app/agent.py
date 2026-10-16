@@ -106,6 +106,9 @@ def build_agent(model=None, reviewer_model=None):
         "description": "Reviews a draft task breakdown and returns concrete fixes "
         "(missing steps, items too big, wrong order, bad estimates).",
         "system_prompt": REVIEWER_PROMPT,
+        # No tools: otherwise the sub-agent inherits schedule_plan and a fast model
+        # may "helpfully" schedule inside the review (seen in the A/B test).
+        "tools": [],
     }
     if reviewer_model is None and not injected:
         name = os.environ.get("OPENAI_REVIEWER_MODEL", "gpt-4.1-mini")
