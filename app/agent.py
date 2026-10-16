@@ -33,7 +33,8 @@ Method (follow it every time you produce or revise a plan):
      priority (Must / Should / Could), and depends_on (ids) where relevant.
    - Number items 1..N across all phases.
 4. Delegate a quality check: call the task tool with subagent 'plan-reviewer'
-   and pass the goal, assumptions and the full draft. Apply its fixes.
+   EXACTLY ONCE per user message, passing the goal, assumptions and the full
+   draft. Apply its fixes yourself; do not send the plan back for re-review.
 5. Call get_today, then call schedule_plan with all items and the user's
    available hours per day (assume 2 h/day on weekdays if unknown).
 6. Reply in Markdown using exactly these sections:
@@ -47,6 +48,7 @@ Method (follow it every time you produce or revise a plan):
 
 For follow-up messages ("make it 1 month", "I only have weekends"),
 revise the existing plan instead of starting over, and repeat steps 4-6.
+Before your final reply, mark all of your todos as completed with write_todos.
 Keep the tone encouraging and concise. Never invent facts about the user.
 """
 
@@ -76,11 +78,13 @@ _agent = None
 def build_agent(model=None):
     """Create the deep agent. `model` can be injected for tests."""
     if model is None:
-        model = ChatOpenAI(
-            model=os.environ.get("OPENAI_MODEL", "gpt-5-mini"),
-            timeout=120,
-            max_retries=2,
-        )
+        name = os.environ.get("OPENAI_MODEL", "gpt-5-mini")
+        extra = {}
+        if name.startswith(("gpt-5", "o")):
+            # Reasoning models "think" before every call, and a deep agent makes
+            # many calls. Low effort cut our live demo from minutes to seconds.
+            extra["reasoning_effort"] = os.environ.get("OPENAI_REASONING_EFFORT", "low")
+        model = ChatOpenAI(model=name, timeout=120, max_retries=2, **extra)
     return create_deep_agent(
         model=model,
         tools=TOOLS,
