@@ -28,10 +28,10 @@ Follow-ups such as "make it 1 month" or "I only have weekends" revise the existi
 | Path | Purpose |
 |---|---|
 | `app/agent.py` | `create_deep_agent` setup: prompts, the `plan-reviewer` sub-agent and `TodoListMiddleware` |
-| `app/tools.py` | `get_today` and `schedule_plan` (dependency-aware, hours/day, skips weekends) |
+| `app/tools.py` | `get_today` and `schedule_plan` (dependency-aware, hours/day, `work_days` such as Mon-Fri or Sat,Sun) |
 | `app/handler.py` | Lambda routes (`GET /`, `GET /health`, `POST /api/chat`), access code, validation |
 | `app/static/index.html` | Chat UI (no external libraries) |
-| `tests/` | 15 pytest tests, including the real deep-agent graph driven by a scripted fake model |
+| `tests/` | 17 pytest tests, including the real deep-agent graph driven by a scripted fake model |
 | `scripts/live_demo.sh` | Live demo with your real key in a terminal (for example AWS CloudShell) |
 | `deploy.sh` | Builds one zip and deploys Lambda + Function URL (us-east-1) |
 
