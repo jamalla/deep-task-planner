@@ -128,7 +128,8 @@ def schedule_plan(
     day. work_days says WHICH days the user works: 'Mon-Fri' (default),
     'Sat,Sun' (weekends only), 'all', or a list like 'Mon,Wed,Fri'.
     start_date is YYYY-MM-DD (default today). Returns a Markdown table plus the
-    finish date; copy both into your reply unchanged.
+    finish date. Do not re-type the table: write {{SCHEDULE}} in your reply and
+    the app inserts it.
     """
     try:
         rows = build_schedule(items, hours_per_day, start_date, work_days)
@@ -142,4 +143,6 @@ def schedule_plan(
     return "\n".join(lines)
 
 
-TOOLS = [get_today, schedule_plan]
+# get_today stays available for reuse, but the agent no longer calls it: today's
+# date is injected into the prompt (one fewer LLM round trip per turn).
+TOOLS = [schedule_plan]
