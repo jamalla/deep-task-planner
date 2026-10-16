@@ -52,18 +52,24 @@ def _order(items: list[PlanItem]) -> list[PlanItem]:
 
 
 DAY_NAMES = ["mon", "tue", "wed", "thu", "fri", "sat", "sun"]
+FULL_DAY_NAMES = ["monday", "tuesday", "wednesday", "thursday", "friday", "saturday", "sunday"]
 ALIASES = {"all": "mon-sun", "every day": "mon-sun", "everyday": "mon-sun",
            "weekdays": "mon-fri", "weekends": "sat,sun", "weekend": "sat,sun"}
 
 
 def parse_work_days(spec: str) -> set[int]:
     """'Mon-Fri' | 'Sat,Sun' | 'weekends' | 'all' | 'Mon,Wed,Fri' | 'Mon-Wed,Sat' -> {0..6}."""
-    text = ALIASES.get(spec.strip().lower(), spec.strip().lower())
+    text = spec.strip().lower()
+    for sep in ("&", " and ", "/", ";", "+"):  # "Sat & Sun", "Sat and Sun" -> "sat,sun"
+        text = text.replace(sep, ",")
+    text = ALIASES.get(text.strip(), text)
     days: set[int] = set()
     for part in filter(None, (p.strip() for p in text.split(","))):
-        names = [n.strip()[:3] for n in part.split("-")]
-        if any(n not in DAY_NAMES for n in names) or len(names) > 2:
+        names = [n.strip() for n in part.split("-")]
+        # Accept "sat", "satur", "saturday"; reject anything else (no silent guesses).
+        if len(names) > 2 or not all(len(n) >= 3 and any(f.startswith(n) for f in FULL_DAY_NAMES) for n in names):
             raise ValueError(f"work_days '{spec}' not understood; use e.g. 'Mon-Fri', 'Sat,Sun', 'all'")
+        names = [n[:3] for n in names]
         a, b = DAY_NAMES.index(names[0]), DAY_NAMES.index(names[-1])
         days.update(range(a, b + 1) if a <= b else [*range(a, 7), *range(0, b + 1)])
     if not days:
