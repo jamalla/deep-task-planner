@@ -31,7 +31,7 @@ Follow-ups such as "make it 1 month" or "I only have weekends" revise the existi
 | `app/tools.py` | `schedule_plan` (dependency-aware, hours/day, `work_days` such as Mon-Fri or Sat,Sun); `get_today` is kept but no longer a tool |
 | `app/handler.py` | Lambda routes (`GET /`, `GET /health`, `POST /api/chat`), access code, validation |
 | `app/static/index.html` | Chat UI (no external libraries) |
-| `tests/` | 19 pytest tests, including the real deep-agent graph driven by a scripted fake model |
+| `tests/` | 20 pytest tests, including the real deep-agent graph driven by a scripted fake model |
 | `scripts/live_demo.sh` | Live demo with your real key in a terminal (for example AWS CloudShell) |
 | `deploy.sh` | Builds one zip and deploys Lambda + Function URL (us-east-1) |
 
@@ -76,7 +76,7 @@ A deep agent's LLM calls run one after another, and most of the time goes into t
 
 1. **`{{SCHEDULE}}` placeholder.** The model writes `{{SCHEDULE}}` and `run_chat` pastes the exact `schedule_plan` table in, so the longest reply no longer re-types the table (and the dates can't drift).
 2. **Two fewer round trips.** Today's date goes into the prompt instead of a `get_today` call, and todos are marked completed in code instead of a final `write_todos` call.
-3. **Fast reviewer.** The plan-reviewer sub-agent runs on `gpt-4.1-mini`, receives a compact one-line-per-item draft, and answers with at most 5 bullets.
+3. **Fast reviewer.** The plan-reviewer sub-agent runs on `gpt-4.1-mini`, receives a compact one-line-per-item draft, and answers with at most 5 bullets. It gets no tools, so it can only review.
 
 Every response includes `timings` (total seconds, LLM calls, output tokens, per-step durations), and the same summary is logged to CloudWatch as a `chat_timing` JSON line.
 
