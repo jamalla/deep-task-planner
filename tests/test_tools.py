@@ -38,8 +38,12 @@ def test_parse_work_days():
     assert parse_work_days("all") == set(range(7))
     assert parse_work_days("Mon-Wed, Saturday") == {0, 1, 2, 5}
     assert parse_work_days("Fri-Mon") == {4, 5, 6, 0}
-    with pytest.raises(ValueError):
-        parse_work_days("someday")
+    # Natural-language separators must not silently drop days (found in Lab 4)
+    assert parse_work_days("Sat & Sun") == parse_work_days("Saturday and Sunday") == {5, 6}
+    assert parse_work_days("Mon/Wed/Fri") == {0, 2, 4}
+    for bad in ("someday", "sa", "sat sun", "Mon-Wed-Fri"):
+        with pytest.raises(ValueError):
+            parse_work_days(bad)
 
 
 def test_cycle_and_unknown_ids_raise():
