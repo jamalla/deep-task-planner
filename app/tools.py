@@ -51,23 +51,44 @@ def _order(items: list[PlanItem]) -> list[PlanItem]:
     return ordered
 
 
+DAY_NAMES = ["mon", "tue", "wed", "thu", "fri", "sat", "sun"]
+ALIASES = {"all": "mon-sun", "every day": "mon-sun", "everyday": "mon-sun",
+           "weekdays": "mon-fri", "weekends": "sat,sun", "weekend": "sat,sun"}
+
+
+def parse_work_days(spec: str) -> set[int]:
+    """'Mon-Fri' | 'Sat,Sun' | 'weekends' | 'all' | 'Mon,Wed,Fri' | 'Mon-Wed,Sat' -> {0..6}."""
+    text = ALIASES.get(spec.strip().lower(), spec.strip().lower())
+    days: set[int] = set()
+    for part in filter(None, (p.strip() for p in text.split(","))):
+        names = [n.strip()[:3] for n in part.split("-")]
+        if any(n not in DAY_NAMES for n in names) or len(names) > 2:
+            raise ValueError(f"work_days '{spec}' not understood; use e.g. 'Mon-Fri', 'Sat,Sun', 'all'")
+        a, b = DAY_NAMES.index(names[0]), DAY_NAMES.index(names[-1])
+        days.update(range(a, b + 1) if a <= b else [*range(a, 7), *range(0, b + 1)])
+    if not days:
+        raise ValueError("work_days is empty")
+    return days
+
+
 def build_schedule(
     items: list[PlanItem],
     hours_per_day: float = 2.0,
     start_date: str | None = None,
-    weekends_off: bool = True,
+    work_days: str = "Mon-Fri",
 ) -> list[dict]:
-    """Pack items, in dependency order, into working days of `hours_per_day`."""
+    """Pack items, in dependency order, into work days of `hours_per_day` each."""
     if hours_per_day <= 0:
         raise ValueError("hours_per_day must be > 0")
+    allowed = parse_work_days(work_days)
     day = date.fromisoformat(start_date) if start_date else date.today()
 
-    def skip_weekend(d: date) -> date:
-        while weekends_off and d.weekday() >= 5:
+    def next_work_day(d: date) -> date:
+        while d.weekday() not in allowed:
             d += timedelta(days=1)
         return d
 
-    day = skip_weekend(day)
+    day = next_work_day(day)
     used = 0.0
     out = []
     for item in _order(items):
@@ -75,7 +96,7 @@ def build_schedule(
         start = None
         while left > 1e-9:
             if used >= hours_per_day - 1e-9:
-                day = skip_weekend(day + timedelta(days=1))
+                day = next_work_day(day + timedelta(days=1))
                 used = 0.0
             chunk = min(left, hours_per_day - used)
             start = start or day
@@ -93,23 +114,25 @@ def schedule_plan(
     items: list[PlanItem],
     hours_per_day: float = 2.0,
     start_date: str | None = None,
-    weekends_off: bool = True,
+    work_days: str = "Mon-Fri",
 ) -> str:
     """Turn action items with effort estimates into a dated schedule.
 
-    Respects depends_on order, fits `hours_per_day` of work per day, and skips
-    weekends unless weekends_off is False. start_date is YYYY-MM-DD (default today).
-    Returns a Markdown table plus the finish date.
+    Respects depends_on order and fits `hours_per_day` of work on each allowed
+    day. work_days says WHICH days the user works: 'Mon-Fri' (default),
+    'Sat,Sun' (weekends only), 'all', or a list like 'Mon,Wed,Fri'.
+    start_date is YYYY-MM-DD (default today). Returns a Markdown table plus the
+    finish date; copy both into your reply unchanged.
     """
     try:
-        rows = build_schedule(items, hours_per_day, start_date, weekends_off)
+        rows = build_schedule(items, hours_per_day, start_date, work_days)
     except ValueError as exc:
         return f"Error: {exc}. Fix the items and call schedule_plan again."
     total = sum(r["hours"] for r in rows)
     lines = ["| # | Action | Hours | Start | End |", "|---|---|---|---|---|"]
     lines += [f"| {r['id']} | {r['title']} | {r['hours']:g} | {r['start']} | {r['end']} |" for r in rows]
     finish = max(r["end"] for r in rows) if rows else "-"
-    lines.append(f"\nTotal effort: {total:g} h at {hours_per_day:g} h/day -> finishes {finish}")
+    lines.append(f"\nTotal effort: {total:g} h at {hours_per_day:g} h/day on {work_days} -> finishes {finish}")
     return "\n".join(lines)
 
 
